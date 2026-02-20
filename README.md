@@ -19,7 +19,15 @@ The easiest way to use this tool is to use the **Portable Release**.
 3. **Windows Users:** Double-click `run.bat`
 4. **Linux / Colab Users:** Run `bash run.sh`
 
-The launcher will dynamically create a local virtual environment, discreetly install require dependencies, and automatically load the application.
+The launcher will dynamically create a local virtual environment, discreetly install required dependencies, and automatically load the application.
+
+### ☁️ Cloud Usage (Google Colab)
+
+If you prefer to run the extraction and quantization pipeline entirely in the cloud, we provide a ready-to-use Google Colab notebook!
+
+👉 [Open **SDXL_Quantize_Tool.ipynb** in Google Colab](https://colab.research.google.com/github/magekinnarus/SDXL_GGUF_Quantize_Tool/blob/main/SDXL_Quantize_Tool.ipynb) *(Update link if repository name is different)*
+
+This notebook utilizes the same powerful unified backend but wraps it in a cloud-friendly Gradio web interface.
 
 ## 🛠️ Usage Breakdown
 
