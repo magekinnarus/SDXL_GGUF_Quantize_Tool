@@ -46,6 +46,14 @@ def run_command(command, cwd=None, shell=True, log_callback=None, cancel_event=N
     child_env = os.environ.copy()
     # Make Python child processes stream logs immediately into the GUI.
     child_env["PYTHONUNBUFFERED"] = "1"
+    
+    # Prepend the tools bin directory to LD_LIBRARY_PATH for shared objects (.so)
+    bin_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bin")
+    if "LD_LIBRARY_PATH" in child_env:
+        child_env["LD_LIBRARY_PATH"] = f"{bin_dir}:{child_env['LD_LIBRARY_PATH']}"
+    else:
+        child_env["LD_LIBRARY_PATH"] = bin_dir
+
     process = subprocess.Popen(
         command,
         cwd=cwd,
