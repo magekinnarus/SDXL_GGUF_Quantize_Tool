@@ -98,6 +98,13 @@ def validate_tools(tools_dir):
     missing = []
     convert_script = os.path.join(tools_dir, "convert.py")
     quantize_bin = os.path.join(tools_dir, "bin", "llama-quantize")
+    
+    # Ensure binary is executable on Linux
+    if os.path.isfile(quantize_bin):
+        import stat
+        st = os.stat(quantize_bin)
+        os.chmod(quantize_bin, st.st_mode | stat.S_IEXEC)
+        
     if not os.path.isfile(convert_script):
         missing.append(convert_script)
     if not os.path.isfile(quantize_bin):
