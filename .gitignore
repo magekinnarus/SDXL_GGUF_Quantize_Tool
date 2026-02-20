@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Models and large files
+*.safetensors
+*.gguf
+*.pt
+*.pth
+*.ckpt
+*.bin
+
+# Windows Debug Symbols
+*.pdb
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*.log
+*.patch
+project_summary.md
+setup_llama.py
+
