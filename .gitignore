@@ -46,6 +46,7 @@ pip-delete-this-directory.txt
 *.swo
 *.log
 *.patch
+*.zip
 project_summary.md
 setup_llama.py
 
