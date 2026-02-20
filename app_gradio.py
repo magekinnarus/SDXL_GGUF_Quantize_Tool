@@ -1,7 +1,16 @@
 import os
 import gradio as gr
 import traceback
-from model_extractor import PipelineCancelled, process_model, extract_components, process_batch
+import platform
+
+if platform.system() == "Windows":
+    from model_extractor import PipelineCancelled, process_model, extract_components, process_batch
+else:
+    from model_extractor_linux import PipelineCancelled, process_model, extract_components, process_batch
+
+import queue
+import threading
+import time
 
 # Helper generator to yield progress to Gradio
 def gradio_progress_callback(progress_obj, done, total, stage):
@@ -22,123 +31,119 @@ def parse_formats(q8, q5, q4, other_enabled, other_val):
     if q4: formats.append("Q4_K_M")
     
     if other_enabled and other_val:
-        # Split by comma or space
         import re
         custom = [x.strip() for x in re.split(r"[\s,;]+", other_val) if x.strip()]
         formats.extend(custom)
     return list(set(formats))
 
+def _run_with_queue(worker_func, progress):
+    q = queue.Queue()
+    log_output = []
+    
+    def log_cb(msg):
+        q.put(("log", msg))
+        
+    def prog_cb(d, t, s):
+        q.put(("progress", d, t, s))
+        
+    def worker():
+        try:
+            worker_func(log_cb, prog_cb)
+            q.put(("done", "Process Completed Successfully!"))
+        except Exception as e:
+            q.put(("error", f"Error: {str(e)}\n\n{traceback.format_exc()}"))
+            
+    threading.Thread(target=worker, daemon=True).start()
+    
+    while True:
+        try:
+            msg_type, *args = q.get(timeout=0.1)
+            if msg_type == "log":
+                log_output.append(args[0])
+                yield "\n".join(log_output)
+            elif msg_type == "progress":
+                gradio_progress_callback(progress, args[0], args[1], args[2])
+            elif msg_type == "done":
+                log_output.append(f"\n\nSuccess: {args[0]}")
+                yield "\n".join(log_output)
+                break
+            elif msg_type == "error":
+                log_output.append(f"\n\n{args[0]}")
+                yield "\n".join(log_output)
+                break
+        except queue.Empty:
+            yield "\n".join(log_output)
+            continue
+
 def run_full_pipeline(input_path, output_dir, q8, q5, q4, other_enabled, other_val, overwrite, skip_clips, progress=gr.Progress()):
     if not input_path or not output_dir:
-        return "Error: Input and Output paths must be provided."
+        yield "Error: Input and Output paths must be provided."
+        return
         
     formats = parse_formats(q8, q5, q4, other_enabled, other_val)
     if not formats:
-        return "Error: Please select at least one quantization format."
+        yield "Error: Please select at least one quantization format."
+        return
         
-    log_output = []
-    def log_cb(msg):
-        log_output.append(msg)
-        
-    try:
+    def _worker(log_cb, prog_cb):
         process_model(
-            input_path=input_path,
-            output_dir=output_dir,
-            formats=formats,
-            overwrite=overwrite,
-            skip_clips=skip_clips,
-            skip_unet=False,
-            log_callback=log_cb,
-            progress_callback=lambda d, t, s: gradio_progress_callback(progress, d, t, s),
-            tools_dir=None # Assumed to be in PATH or current dir
+            input_path=input_path, output_dir=output_dir, formats=formats, overwrite=overwrite,
+            skip_clips=skip_clips, skip_unet=False, log_callback=log_cb, progress_callback=prog_cb, tools_dir=None
         )
-        return "\n".join(log_output) + "\n\nSuccess: Full Pipeline Completed!"
-    except Exception as e:
-        return f"Error: {str(e)}\n\n" + traceback.format_exc()
+    yield from _run_with_queue(_worker, progress)
 
 def run_extraction_only(input_path, output_dir, skip_unet, skip_clips, overwrite, progress=gr.Progress()):
     if not input_path or not output_dir:
-        return "Error: Input and Output paths must be provided."
+        yield "Error: Input and Output paths must be provided."
+        return
         
-    log_output = []
-    def log_cb(msg):
-        log_output.append(msg)
-        
-    # Derive model name explicitly for extraction
     model_name = os.path.splitext(os.path.basename(input_path))[0]
     for suffix in ["_unet", ".unet", "_f16", ".f16", "-f16"]:
         if model_name.lower().endswith(suffix):
             model_name = model_name[:-len(suffix)]
                 
-    try:
+    def _worker(log_cb, prog_cb):
         extract_components(
-            model_path=input_path,
-            output_dir=output_dir,
-            model_name=model_name,
-            skip_unet=skip_unet,
-            skip_clips=skip_clips,
-            overwrite=overwrite,
-            log_callback=log_cb,
-            step_progress_callback=lambda f, s: gradio_progress_callback(progress, f * 100, 100, s), # Adapter for fraction
-            tools_dir=None
+            model_path=input_path, output_dir=output_dir, model_name=model_name,
+            skip_unet=skip_unet, skip_clips=skip_clips, overwrite=overwrite,
+            log_callback=log_cb, step_progress_callback=lambda f, s: prog_cb(f * 100, 100, s), tools_dir=None
         )
-        return "\n".join(log_output) + "\n\nSuccess: Extraction Completed!"
-    except Exception as e:
-        return f"Error: {str(e)}\n\n" + traceback.format_exc()
+    yield from _run_with_queue(_worker, progress)
 
 def run_quantize_only(input_path, output_dir, q8, q5, q4, other_enabled, other_val, overwrite, progress=gr.Progress()):
     if not input_path or not output_dir:
-        return "Error: Input and Output paths must be provided."
+        yield "Error: Input and Output paths must be provided."
+        return
         
     formats = parse_formats(q8, q5, q4, other_enabled, other_val)
     if not formats:
-        return "Error: Please select at least one quantization format."
+        yield "Error: Please select at least one quantization format."
+        return
         
-    log_output = []
-    def log_cb(msg):
-        log_output.append(msg)
-        
-    try:
+    def _worker(log_cb, prog_cb):
         process_model(
-            input_path=input_path,
-            output_dir=output_dir,
-            formats=formats,
-            overwrite=overwrite,
-            skip_clips=True,
-            skip_unet=True,
-            log_callback=log_cb,
-            progress_callback=lambda d, t, s: gradio_progress_callback(progress, d, t, s),
-            tools_dir=None
+            input_path=input_path, output_dir=output_dir, formats=formats, overwrite=overwrite,
+            skip_clips=True, skip_unet=True, log_callback=log_cb, progress_callback=prog_cb, tools_dir=None
         )
-        return "\n".join(log_output) + "\n\nSuccess: Quantization Completed!"
-    except Exception as e:
-        return f"Error: {str(e)}\n\n" + traceback.format_exc()
+    yield from _run_with_queue(_worker, progress)
 
 def run_batch_process(input_dir, output_dir, q8, q5, q4, other_enabled, other_val, overwrite, progress=gr.Progress()):
     if not input_dir or not output_dir:
-        return "Error: Input and Output directories must be provided."
+        yield "Error: Input and Output directories must be provided."
+        return
         
     formats = parse_formats(q8, q5, q4, other_enabled, other_val)
     if not formats:
-        return "Error: Please select at least one quantization format."
+        yield "Error: Please select at least one quantization format."
+        return
         
-    log_output = []
-    def log_cb(msg):
-        log_output.append(msg)
-        
-    try:
+    def _worker(log_cb, prog_cb):
         process_batch(
-            input_dir=input_dir,
-            output_dir=output_dir,
-            formats=formats,
-            overwrite=overwrite,
-            log_callback=log_cb,
-            progress_callback=lambda d, t, s: gradio_progress_callback(progress, d, t, s),
-            tools_dir=None
+            input_dir=input_dir, output_dir=output_dir, formats=formats, overwrite=overwrite,
+            log_callback=log_cb, progress_callback=prog_cb, tools_dir=None
         )
-        return "\n".join(log_output) + "\n\nSuccess: Batch Processing Completed!"
-    except Exception as e:
-        return f"Error: {str(e)}\n\n" + traceback.format_exc()
+    yield from _run_with_queue(_worker, progress)
+
 
 
 # -------------------------------------------------------------------------
