@@ -17,7 +17,7 @@ The easiest way to use this tool is to use the **Portable Release**.
 1. Download the latest `SDXL_GGUF_Quantize_Tool_Portable.zip` from [**GitHub Releases**](#).
 2. Extract the folder to your desired location.
 3. **Windows Users:** Double-click `run.bat`
-4. **Linux / Colab Users:** Run `bash run.sh`
+4. **Linux Users:** Run `bash run.sh`
 
 The launcher will dynamically create a local virtual environment, discreetly install required dependencies, and automatically load the application.
 
