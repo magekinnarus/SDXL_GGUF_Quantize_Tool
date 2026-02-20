@@ -46,6 +46,15 @@ def run_command(command, cwd=None, shell=True, log_callback=None, cancel_event=N
     child_env = os.environ.copy()
     # Make Python child processes stream logs immediately into the GUI.
     child_env["PYTHONUNBUFFERED"] = "1"
+    
+    # Prepend the tools bin directory to LD_LIBRARY_PATH for shared objects (.so)
+    if os.name != 'nt':
+        bin_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bin")
+        if "LD_LIBRARY_PATH" in child_env:
+            child_env["LD_LIBRARY_PATH"] = f"{bin_dir}:{child_env['LD_LIBRARY_PATH']}"
+        else:
+            child_env["LD_LIBRARY_PATH"] = bin_dir
+
     process = subprocess.Popen(
         command,
         cwd=cwd,
@@ -97,7 +106,15 @@ def run_command(command, cwd=None, shell=True, log_callback=None, cancel_event=N
 def validate_tools(tools_dir):
     missing = []
     convert_script = os.path.join(tools_dir, "convert.py")
-    quantize_bin = os.path.join(tools_dir, "bin", "llama-quantize.exe")
+    bin_name = "llama-quantize.exe" if os.name == 'nt' else "llama-quantize"
+    quantize_bin = os.path.join(tools_dir, "bin", bin_name)
+    
+    # Ensure binary is executable on Linux
+    if os.name != 'nt' and os.path.isfile(quantize_bin):
+        import stat
+        st = os.stat(quantize_bin)
+        os.chmod(quantize_bin, st.st_mode | stat.S_IEXEC)
+        
     if not os.path.isfile(convert_script):
         missing.append(convert_script)
     if not os.path.isfile(quantize_bin):
@@ -119,6 +136,7 @@ def extract_components(
 ):
     _check_cancel(cancel_event)
     
+    output_dir = os.path.abspath(output_dir)
     unet_output = os.path.join(output_dir, 'unet', f'{model_name}_unet.safetensors')
     clips_output = os.path.join(output_dir, 'clips', f'{model_name}_clips.safetensors')
 
@@ -221,6 +239,7 @@ def convert_to_gguf(
     cancel_event=None,
 ):
     _check_cancel(cancel_event)
+    output_dir = os.path.abspath(output_dir)
     f16_output_dir = os.path.join(output_dir, 'fp16')
     os.makedirs(f16_output_dir, exist_ok=True)
     f16_output = os.path.join(f16_output_dir, f'{model_name}_F16.gguf')
@@ -251,11 +270,13 @@ def quantize_model(
     cancel_event=None,
 ):
     _check_cancel(cancel_event)
+    output_dir = os.path.abspath(output_dir)
     quantized_output_dir = os.path.join(output_dir, 'quantized')
     os.makedirs(quantized_output_dir, exist_ok=True)
     
-    # Path to your confirmed Debug executable
-    quantize_bin = os.path.join(tools_dir, 'bin', 'llama-quantize.exe')
+    # Path to your confirmed executable
+    bin_name = "llama-quantize.exe" if os.name == 'nt' else "llama-quantize"
+    quantize_bin = os.path.join(tools_dir, 'bin', bin_name)
 
     for fmt in formats:
         _check_cancel(cancel_event)
@@ -298,6 +319,7 @@ def process_model(
         if model_name.lower().endswith(suffix):
             model_name = model_name[:-len(suffix)]
             
+    output_dir = os.path.abspath(output_dir)
     unet_output = os.path.join(output_dir, "unet", f"{model_name}_unet.safetensors")
     clips_output = os.path.join(output_dir, "clips", f"{model_name}_clips.safetensors")
     f16_output = os.path.join(output_dir, "fp16", f"{model_name}_F16.gguf")

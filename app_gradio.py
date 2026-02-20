@@ -3,10 +3,7 @@ import gradio as gr
 import traceback
 import platform
 
-if platform.system() == "Windows":
-    from model_extractor import PipelineCancelled, process_model, extract_components, process_batch
-else:
-    from model_extractor_linux import PipelineCancelled, process_model, extract_components, process_batch
+from model_extractor import PipelineCancelled, process_model, extract_components, process_batch
 
 import queue
 import threading
