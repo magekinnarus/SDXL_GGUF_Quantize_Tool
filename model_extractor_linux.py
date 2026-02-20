@@ -119,6 +119,7 @@ def extract_components(
 ):
     _check_cancel(cancel_event)
     
+    output_dir = os.path.abspath(output_dir)
     unet_output = os.path.join(output_dir, 'unet', f'{model_name}_unet.safetensors')
     clips_output = os.path.join(output_dir, 'clips', f'{model_name}_clips.safetensors')
 
@@ -221,6 +222,7 @@ def convert_to_gguf(
     cancel_event=None,
 ):
     _check_cancel(cancel_event)
+    output_dir = os.path.abspath(output_dir)
     f16_output_dir = os.path.join(output_dir, 'fp16')
     os.makedirs(f16_output_dir, exist_ok=True)
     f16_output = os.path.join(f16_output_dir, f'{model_name}_F16.gguf')
@@ -251,6 +253,7 @@ def quantize_model(
     cancel_event=None,
 ):
     _check_cancel(cancel_event)
+    output_dir = os.path.abspath(output_dir)
     quantized_output_dir = os.path.join(output_dir, 'quantized')
     os.makedirs(quantized_output_dir, exist_ok=True)
     
@@ -298,6 +301,7 @@ def process_model(
         if model_name.lower().endswith(suffix):
             model_name = model_name[:-len(suffix)]
             
+    output_dir = os.path.abspath(output_dir)
     unet_output = os.path.join(output_dir, "unet", f"{model_name}_unet.safetensors")
     clips_output = os.path.join(output_dir, "clips", f"{model_name}_clips.safetensors")
     f16_output = os.path.join(output_dir, "fp16", f"{model_name}_F16.gguf")
