@@ -43,12 +43,12 @@ Define an input folder full of `.safetensors` checkpoints and an output folder. 
 
 ### ⚠️ CRITICAL: Custom ComfyUI Node Required for CLIPs
 
-If you used the legacy 2024 SDXL extraction notebook, you likely remember that it stripped the CLIP prefixes so they could load in ComfyUI's standard `DualClipLoader`. **This tool no longer does that.** 
+If you used the legacy 2024 SDXL extraction notebook, you likely remember that the CLIPs patched through a number of processesso they could load in ComfyUI's standard `DualClipLoader`. **This tool no longer does that.** 
 
-We now extract "Bundled CLIPs" (with their original `conditioner.embedders.*` prefixes completely preserved). This means **they will fail to load** in standard ComfyUI CLIP loaders. 
+We now extract "Bundled CLIPs" (with their original prefixes preserved). This means **they will fail to load** in standard ComfyUI CLIP loaders. 
 
 To use the CLIPs extracted by this tool in ComfyUI, you **must** use the custom `DJ_Cliploader` node:
-👉 [Download ComfyUI-DJ_nodes Here](https://github.com/StartHua/ComfyUI-DJ_nodes) *(Replace this link with your actual repo link)*
+👉 [Download ComfyUI-DJ_nodes Here](https://github.com/magekinnarus/ComfyUI-DJ_nodes)
 
 This custom node handles the dynamic prefix resolution at load-time securely, rather than applying destructive stripping to the files during quantization.
 
