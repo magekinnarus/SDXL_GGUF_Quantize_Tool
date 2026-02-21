@@ -16,7 +16,7 @@ A complete, standalone local GUI tool for extracting SDXL checkpoint components 
 
 The easiest way to use this tool is to use the **Portable Release**.
 
-1. Download the latest `SDXL_GGUF_Quantize_Tool_Portable.zip` from [**GitHub Releases**](#).
+1. Download the latest `SDXL_GGUF_Quantize_Tool_Portable.zip` from [**GitHub Releases**](https://github.com/magekinnarus/SDXL_GGUF_Quantize_Tool/releases).
 2. Extract the folder to your desired location.
 3. **Windows Users:** Double-click `run.bat`
 4. **Linux Users:** Run `bash run.sh`
