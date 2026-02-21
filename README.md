@@ -1,5 +1,7 @@
 # SDXL GGUF Quantize Tool
 
+![Workflow Screenshot](images/app1.png)
+
 A complete, standalone local GUI tool for extracting SDXL checkpoint components and quantizing the UNet to GGUF format. This tool completely eliminates the need for complex Python setups, Jupyter Notebooks, or manual terminal commands by wrapping everything in an easy-to-use cross-platform interface.
 
 ## 🌟 Key Features
@@ -22,6 +24,8 @@ The easiest way to use this tool is to use the **Portable Release**.
 The launcher will dynamically create a local virtual environment, discreetly install required dependencies, and automatically load the application.
 
 ### ☁️ Cloud Usage (Google Colab)
+
+![Workflow Screenshot](images/app2.png)
 
 If you prefer to run the extraction and quantization pipeline entirely in the cloud, we provide a ready-to-use Google Colab notebook!
 
